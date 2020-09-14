@@ -1,5 +1,6 @@
 .DS_Store
 venv
 .ipynb_checkpoints
+zwift/.ipynb_checkpoints
 .idea
 __pycache__
