@@ -1,9 +1,10 @@
 # ZWIFT.COM TEAM TIME TRIALS
 
+from datetime import timedelta
 import pandas as pd
-from haversine import haversine
+from haversine import haversine, Unit
 
-def merge_activities(path):
+def merge_activities(path, fix_time=None):
     """
     Data is imported and columns are named using the file name a field.
     For example Altitude_John
@@ -16,6 +17,8 @@ def merge_activities(path):
       print("***",a)
       df_temp = pd.read_csv(a, parse_dates= ['Date_Time']).drop(['Unnamed: 0', 'No'], axis=1)
       name = a.stem
+      if fix_time:
+          df_temp['Date_Time'] = df_temp['Date_Time'] + timedelta(seconds=fix_time[name])
       names.append(name)
       # print(name)
       df_temp.rename(columns={'Latitude': f'Latitude_{name}',	'Longitude': f'Longitude_{name}', 'Altitude': f'Altitude_{name}',
@@ -57,5 +60,30 @@ def team_position(df, names):
     df['lon_center'] = df[lon].mean(axis=1)
     for n in names:
         df[f'{n}_to_center'] = df[['lat_center', 'lon_center', f"Latitude_{n}", f"Longitude_{n}"]].apply(
-            lambda x: haversine((x[0], x[1]), (x[2], x[3])), axis=1)
+            lambda x: haversine((x[0], x[1]), (x[2], x[3]), unit=Unit.METERS), axis=1)
     return df
+
+def distance(df):
+    """
+    flat distacnce ignores elevation
+    :return: {'total_distance': total_distance}
+    """
+    df["shift_lon_center"] = df.shift(1)["lon_center"]
+    df["shift_lat_center"] = df.shift(1)["lat_center"]
+    # This is the flat distance between points
+    df["distance_between"] = df[['lat_center', 'lon_center', 'shift_lat_center', "shift_lon_center"]].apply(
+        lambda x: haversine((x[0], x[1]),(x[2], x[3]), unit=Unit.METERS), axis=1)
+    df.drop(['shift_lon_center', 'shift_lat_center'], axis=1)
+    total_distance = df["distance_between"].sum()
+    df['distance'] = df['distance_between'].cumsum()
+    mean_dist = df[df.distance_between > 0]["distance_between"].mean()
+    median_dist = float(df[df.distance_between > 0]["distance_between"].median())
+    max_dist = df["distance_between"].max()
+    min_dist = df[df.distance_between > 0]["distance_between"].min()
+    return {'total_distance': total_distance,
+            'mean_dist': mean_dist,
+            'median_dist': median_dist,
+            'max_dist': max_dist,
+            'min_dist': min_dist,
+            'df':df
+            }
