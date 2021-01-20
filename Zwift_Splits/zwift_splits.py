@@ -1,7 +1,7 @@
 
 
 def splits(t0, t1, global_splits):
-    """
+    """ 
     two concecutive rider data points  t0 and t1 as a dict.
     all_splits = custom/privet event splits and Global splits
     """
@@ -20,11 +20,13 @@ def splits(t0, t1, global_splits):
                 crossed_down = rt1 <= split['roadTime'] <= rt0 # decreasing roadTime
                 if (crossed_up or crossed_down):
                     # Interpolate
-                    slope = (t1['zwiftTime'] - t0['zwiftTime'])/(rt1 - rt0)
-                    split_time = slope * (split['roadTime'] - rt0) + t0['zwiftTime']
-                    print(f"Check:\n{rt0} > {split['roadTime']} > {rt1}\n{t0['zwiftTime']} > {split_time} > {t1['zwiftTime']}")
+                    slope = (t1['irlTime'] - t0['irlTime'])/(rt1 - rt0)
+                    split_time = slope * (split['roadTime'] - rt0) + t0['irlTime']
+                    print(f"Check:\n{rt0} > {split['roadTime']} > {rt1}\n{t0['irlTime']} > {split_time} > {t1['irlTime']}")
                     return {'id':t0['id'], 'split_time': split_time, 'split_name': global_splits[name], 'split_data':split, 'metrics':{}}
-        except:
+        except Exception as e:
             # should log something
             print(f"****Error\nSplit Name:{name}\nt0: {t0}\nt1: {t1}")
+            # print(e)
+            raise e
             return {'error': {'id':t0['id'], 'split_name':name, 'split_data':split}}

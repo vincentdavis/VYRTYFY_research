@@ -1,3 +1,4 @@
 haversine
 jupyter
 pandas
+numpy
